@@ -23,7 +23,7 @@ L'arbitre démarre les manches depuis un navigateur ; les joueurs appuient sur l
 
 | Composant | Technologie |
 |-----------|-------------|
-| Backend   | Python 3.12 + Flask |
+| Backend   | Python 3.10+ (testé sur 3.12) + Flask |
 | Frontend  | HTML/CSS/JS vanilla (SSE temps réel) |
 | Firmware  | Arduino C++ (`.ino` / `arduino.cpp`) |
 

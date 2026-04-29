@@ -43,7 +43,7 @@ const App = (() => {
     const es = new EventSource("/events");
     es.addEventListener("state", e => {
       try { _applyState(JSON.parse(e.data)); }
-      catch (_) {}
+      catch (err) { console.warn("[SSE] parse error:", err); }
     });
     es.onerror = () => {
       // Brief pause then reconnect
@@ -100,8 +100,8 @@ const App = (() => {
 
       case "partial": {
         // One player has finished; don't reveal times yet (anti-cheat)
-        const pressed = s.pressed ?? [];
-        _setSignal("partial", pressed.length === 2 ? "⏳" : "½");
+        const pressedPlayers = s.pressed ?? [];
+        _setSignal("partial", pressedPlayers.length === 2 ? "⏳" : "½");
         if (s.mode !== "ghost" && s.mode !== "blackout") {
           _startLiveTimer(s);
         }

@@ -34,8 +34,10 @@ GO_DELAY_MAX  = 5.0   # s  (maximum random wait before signal)
 ROUND_TIMEOUT = 8.0   # s  (auto-DNF if player doesn't press)
 REVEAL_DELAY  = 0.8   # s  (pause after last press before revealing result)
 NEXT_ROUND_DELAY = 2.5  # s  (auto-advance delay in series modes)
-RAPID_N       = 5
-BEST_OF_N     = 3
+RAPID_N           = 5
+BEST_OF_N         = 3
+SSE_QUEUE_SIZE    = 64   # max pending SSE frames per client before dropping
+TIE_THRESHOLD_S   = 0.001  # s – presses closer than this are declared a tie
 
 # ── Game modes ─────────────────────────────────────────────────────────────
 MODES = {
@@ -67,7 +69,7 @@ def _broadcast(event: str, data: dict) -> None:
 
 
 def _sse_subscribe() -> queue.Queue:
-    q: queue.Queue = queue.Queue(maxsize=64)
+    q: queue.Queue = queue.Queue(maxsize=SSE_QUEUE_SIZE)
     with _clients_lock:
         _clients.append(q)
     return q
@@ -203,7 +205,13 @@ def _find_port() -> str | None:
 
 
 def _kill_port_users(port: str) -> None:
-    """Kill any process holding the serial port open."""
+    """Kill any process holding the serial port open.
+
+    Note: uses ``lsof`` and ``kill``, which are Unix/Linux/macOS only.
+    This function is a no-op on unsupported platforms.
+    """
+    if sys.platform == "win32":
+        return
     try:
         out = subprocess.check_output(["lsof", "-t", port], text=True).strip()
         for pid in out.splitlines():
@@ -348,7 +356,7 @@ def _compute_result_locked() -> None:
         winner = "J2"
     elif t2 is None:
         winner = "J1"
-    elif abs(t1 - t2) < 0.001:
+    elif abs(t1 - t2) < TIE_THRESHOLD_S:
         winner = "tie"
     else:
         winner = "J1" if t1 < t2 else "J2"
