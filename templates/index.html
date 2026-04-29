@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jeu de Buzzer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<!-- ── Écran principal ─────────────────────────────────────────────────── -->
+<div id="app" class="app">
+
+  <!-- Bandeau supérieur : mode + scores -->
+  <header id="header">
+    <div class="score-block j1">
+      <span class="player-label">Joueur 1</span>
+      <span id="score-j1" class="score">0</span>
+    </div>
+
+    <div class="center-header">
+      <span id="mode-label" class="mode-label">Réflexe</span>
+      <span id="round-indicator" class="round-indicator"></span>
+    </div>
+
+    <div class="score-block j2">
+      <span id="score-j2" class="score">0</span>
+      <span class="player-label">Joueur 2</span>
+    </div>
+  </header>
+
+  <!-- Zone centrale : signal + chrono + résultat -->
+  <main id="stage">
+
+    <div id="signal-ring" class="signal-ring idle">
+      <span id="signal-text" class="signal-text">—</span>
+    </div>
+
+    <div id="timer-wrap" class="timer-wrap hidden">
+      <div id="timer-bar" class="timer-bar"></div>
+      <span id="timer-display" class="timer-display">0.000 s</span>
+    </div>
+
+    <div id="result-panel" class="result-panel hidden">
+      <div id="winner-crown" class="winner-crown"></div>
+      <div id="result-times" class="result-times"></div>
+    </div>
+
+  </main>
+
+  <!-- Panneau de contrôle (bas) -->
+  <footer id="controls">
+    <!-- Sélecteur de mode -->
+    <div id="mode-selector" class="mode-selector">
+      <!-- Populated by JS -->
+    </div>
+    <!-- Boutons d'action -->
+    <div class="action-buttons">
+      <button id="btn-start" class="btn btn-primary" onclick="App.startGame()">▶ Démarrer</button>
+      <button id="btn-reset" class="btn btn-secondary" onclick="App.reset()">↺ Réinitialiser</button>
+    </div>
+    <div id="sim-notice" class="sim-notice hidden">
+      ⚠ Mode simulation — <kbd>Q</kbd>/<kbd>Space</kbd> = J1 &nbsp;|&nbsp; <kbd>P</kbd>/<kbd>Enter</kbd> = J2
+    </div>
+  </footer>
+
+</div>
+
+<!-- ── Overlay "Blackout" ───────────────────────────────────────────────── -->
+<div id="blackout-overlay" class="blackout-overlay hidden"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

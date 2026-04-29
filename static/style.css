@@ -1,0 +1,301 @@
+/* ── Reset & base ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #0a0a0f;
+  --surface:     #12121a;
+  --border:      #1e1e2e;
+  --accent-j1:   #3b82f6;   /* blue  – player 1 */
+  --accent-j2:   #f59e0b;   /* amber – player 2 */
+  --accent-go:   #22c55e;   /* green – signal   */
+  --accent-wait: #8b5cf6;   /* purple – countdown */
+  --text:        #e2e8f0;
+  --muted:       #64748b;
+  --radius:      12px;
+  --font:        'Segoe UI', system-ui, sans-serif;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+/* ── App layout ────────────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-rows: 80px 1fr 140px;
+  width: 100vw; height: 100vh;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.score-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.score-block.j1 { flex-direction: row; }
+.score-block.j2 { flex-direction: row-reverse; }
+
+.player-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 2ch;
+  text-align: center;
+}
+.score-block.j1 .score { color: var(--accent-j1); }
+.score-block.j2 .score { color: var(--accent-j2); }
+
+.center-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+}
+.mode-label {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.round-indicator {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* ── Stage (central area) ──────────────────────────────────────────────── */
+#stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Signal ring */
+.signal-ring {
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid transparent;
+  transition: background .25s, border-color .25s, box-shadow .25s, transform .15s;
+}
+.signal-ring.idle {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.signal-ring.countdown {
+  background: color-mix(in srgb, var(--accent-wait) 15%, var(--surface));
+  border-color: var(--accent-wait);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--accent-wait) 30%, transparent);
+  animation: pulse-wait 1s ease-in-out infinite;
+}
+.signal-ring.go {
+  background: color-mix(in srgb, var(--accent-go) 20%, var(--surface));
+  border-color: var(--accent-go);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--accent-go) 40%, transparent);
+  animation: pulse-go .4s ease-out;
+}
+.signal-ring.partial {
+  background: color-mix(in srgb, var(--accent-j1) 15%, var(--surface));
+  border-color: var(--accent-j1);
+}
+.signal-ring.finished {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.signal-text {
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: .03em;
+  user-select: none;
+}
+
+@keyframes pulse-wait {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%       { transform: scale(1.04); opacity: .85; }
+}
+@keyframes pulse-go {
+  0%   { transform: scale(1.15); }
+  100% { transform: scale(1);    }
+}
+
+/* Timer */
+.timer-wrap {
+  width: min(420px, 80vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+}
+.timer-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+.timer-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: var(--progress, 0%);
+  background: linear-gradient(90deg, var(--accent-j1), var(--accent-go));
+  border-radius: 3px;
+  transition: width 50ms linear;
+}
+.timer-display {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Result panel */
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  text-align: center;
+}
+.winner-crown {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+.result-times {
+  display: flex;
+  gap: 3rem;
+  font-size: 1.1rem;
+}
+.result-time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+}
+.result-time-block .player-name {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.result-time-block .time-val {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.result-time-block.winner-j1 .time-val { color: var(--accent-j1); }
+.result-time-block.winner-j2 .time-val { color: var(--accent-j2); }
+.result-time-block.loser       .time-val { color: var(--muted); }
+.result-time-block.dnf         .time-val { color: #ef4444; font-size: 1.4rem; }
+.result-time-block.tie         .time-val { color: var(--accent-go); }
+
+/* ── Footer (controls) ─────────────────────────────────────────────────── */
+#controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  padding: .75rem 1.5rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.mode-selector {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.mode-btn {
+  padding: .35rem .9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: .8rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.mode-btn:hover  { border-color: var(--accent-go); color: var(--text); }
+.mode-btn.active {
+  background: var(--accent-go);
+  border-color: var(--accent-go);
+  color: #000;
+  font-weight: 700;
+}
+
+.action-buttons {
+  display: flex;
+  gap: .75rem;
+}
+.btn {
+  padding: .5rem 1.5rem;
+  border-radius: var(--radius);
+  border: none;
+  font-family: var(--font);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary   { background: var(--accent-go);   color: #000; }
+.btn-secondary { background: var(--border);       color: var(--text); }
+.btn:disabled  { opacity: .4; cursor: default; }
+
+.sim-notice {
+  font-size: .75rem;
+  color: var(--muted);
+}
+.sim-notice kbd {
+  display: inline-block;
+  padding: .1em .4em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: .7rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* ── Blackout overlay ──────────────────────────────────────────────────── */
+.blackout-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
