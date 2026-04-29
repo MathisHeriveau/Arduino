@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bouton Club</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-theme="ember" data-phase="idle">
+  <div class="backdrop"></div>
+  <div class="scanlines"></div>
+
+  <main class="kiosk">
+    <header class="topbar">
+      <div class="brandblock">
+        <div class="brand">Bouton Club</div>
+        <div id="hero-copy" class="hero-copy">Precision pure, score masque jusqu'a la revelation.</div>
+      </div>
+
+      <div class="statusblock">
+        <div id="mode-chip" class="mode-chip">Timer Fantome</div>
+        <div id="phase-chip" class="phase-chip">Pret</div>
+      </div>
+
+      <div class="toolbar">
+        <button id="menu-toggle" class="control-button" type="button">Modes</button>
+        <button id="fullscreen-button" class="control-button" type="button">Plein ecran</button>
+        <button id="reset-button" class="control-button control-button-muted" type="button">Reset</button>
+      </div>
+    </header>
+
+    <section class="stage">
+      <div id="target-line" class="target-line">Pret a lancer la scene</div>
+      <div id="display-value" class="display-value">--</div>
+      <div id="display-hint" class="display-hint">Choisissez un mode puis lancez la scene.</div>
+      <div id="message" class="message-strip">Choisissez un mode puis lancez la scene.</div>
+    </section>
+
+    <section class="lanes">
+      <article id="player-j1" class="lane lane-j1">
+        <div class="lane-head">
+          <span class="lane-tag">Joueur 1</span>
+          <strong>J1</strong>
+        </div>
+        <div class="lane-metric">
+          <span id="j1-metric-label">Chrono</span>
+          <strong id="j1-metric-value">--</strong>
+        </div>
+        <div class="lane-metric">
+          <span id="j1-detail-label">Ecart</span>
+          <strong id="j1-detail-value">--</strong>
+        </div>
+        <div id="j1-status" class="lane-status">Pret</div>
+      </article>
+
+      <article id="player-j2" class="lane lane-j2">
+        <div class="lane-head">
+          <span class="lane-tag">Joueur 2</span>
+          <strong>J2</strong>
+        </div>
+        <div class="lane-metric">
+          <span id="j2-metric-label">Chrono</span>
+          <strong id="j2-metric-value">--</strong>
+        </div>
+        <div class="lane-metric">
+          <span id="j2-detail-label">Ecart</span>
+          <strong id="j2-detail-value">--</strong>
+        </div>
+        <div id="j2-status" class="lane-status">Pret</div>
+      </article>
+    </section>
+
+    <footer class="dock">
+      <div id="scoreboard" class="scoreboard">
+        <div id="score-headline" class="score-headline">J1 0 | J2 0</div>
+        <div id="score-subline" class="score-subline">Manche seche</div>
+      </div>
+
+      <div class="dock-actions">
+        <div class="round-pill">
+          Manche
+          <span id="round-number">0</span>
+        </div>
+        <button id="advance-button" class="launch-button" type="button">Entrer en scene</button>
+      </div>
+    </footer>
+
+    <aside id="mode-panel" class="mode-panel" aria-hidden="true">
+      <div class="mode-panel-head">
+        <div>
+          <div class="panel-kicker">Menu</div>
+          <h2>Choix du jeu</h2>
+        </div>
+        <button id="close-menu" class="control-button control-button-muted" type="button">Fermer</button>
+      </div>
+      <div id="mode-grid" class="mode-grid"></div>
+    </aside>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
