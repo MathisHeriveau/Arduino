@@ -15,6 +15,8 @@ from serial.tools import list_ports
 
 PREFERRED_PORT = os.environ.get("ARDUINO_PORT", "/dev/cu.usbmodem101")
 BAUDRATE = int(os.environ.get("ARDUINO_BAUDRATE", "9600"))
+SERVER_HOST = os.environ.get("HOST", "127.0.0.1")
+SERVER_PORT = int(os.environ.get("PORT", "5050"))
 PLAYERS = ("J1", "J2")
 
 MODES = {
@@ -25,8 +27,8 @@ MODES = {
         "description": "Un chrono visible quelques instants, puis plus rien. Le plus proche de la cible gagne.",
         "hero": "Precision pure, score masque jusqu'a la revelation.",
         "theme": "ember",
-        "target_min": 15,
-        "target_max": 20,
+        "target_min": 8,
+        "target_max": 15,
         "hide_after": 5.0,
         "rounds_to_win": 1,
         "reveal_delay": 1.1,
@@ -1025,5 +1027,5 @@ def background_clock():
 
 threading.Thread(target=background_clock, daemon=True).start()
 
-print("Serveur lance sur http://127.0.0.1:5000")
-app.run(debug=False, threaded=True)
+print(f"Serveur lance sur http://{SERVER_HOST}:{SERVER_PORT}")
+app.run(host=SERVER_HOST, port=SERVER_PORT, debug=False, threaded=True)
