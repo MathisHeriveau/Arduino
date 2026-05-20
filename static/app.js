@@ -3,14 +3,19 @@ const els = {
   heroCopy: document.getElementById("hero-copy"),
   modeChip: document.getElementById("mode-chip"),
   phaseChip: document.getElementById("phase-chip"),
+  targetKicker: document.getElementById("target-kicker"),
+  targetFocus: document.getElementById("target-focus"),
   targetLine: document.getElementById("target-line"),
+  displayPanel: document.querySelector(".display-panel"),
   displayValue: document.getElementById("display-value"),
   displayHint: document.getElementById("display-hint"),
-  message: document.getElementById("message"),
+  playersTableBoard: document.getElementById("players-table-board"),
+  doubletapBoard: document.getElementById("doubletap-board"),
+  metricHeading: document.getElementById("metric-heading"),
+  detailHeading: document.getElementById("detail-heading"),
   scoreBoard: document.getElementById("scoreboard"),
   scoreHeadline: document.getElementById("score-headline"),
   scoreSubline: document.getElementById("score-subline"),
-  roundNumber: document.getElementById("round-number"),
   advanceButton: document.getElementById("advance-button"),
   resetButton: document.getElementById("reset-button"),
   fullscreenButton: document.getElementById("fullscreen-button"),
@@ -21,19 +26,43 @@ const els = {
   players: {
     J1: {
       card: document.getElementById("player-j1"),
-      metricLabel: document.getElementById("j1-metric-label"),
       metricValue: document.getElementById("j1-metric-value"),
-      detailLabel: document.getElementById("j1-detail-label"),
       detailValue: document.getElementById("j1-detail-value"),
       status: document.getElementById("j1-status"),
+      tapProgress: document.getElementById("j1-tap-progress"),
+      tap1: document.getElementById("j1-tap-1"),
+      tap2: document.getElementById("j1-tap-2"),
     },
     J2: {
       card: document.getElementById("player-j2"),
-      metricLabel: document.getElementById("j2-metric-label"),
       metricValue: document.getElementById("j2-metric-value"),
-      detailLabel: document.getElementById("j2-detail-label"),
       detailValue: document.getElementById("j2-detail-value"),
       status: document.getElementById("j2-status"),
+      tapProgress: document.getElementById("j2-tap-progress"),
+      tap1: document.getElementById("j2-tap-1"),
+      tap2: document.getElementById("j2-tap-2"),
+    },
+  },
+  impactPlayers: {
+    J1: {
+      card: document.getElementById("impact-card-j1"),
+      status: document.getElementById("j1-impact-status"),
+      step1: document.getElementById("j1-impact-step-1"),
+      step2: document.getElementById("j1-impact-step-2"),
+      metricLabel: document.getElementById("j1-impact-metric-label"),
+      metricValue: document.getElementById("j1-impact-metric-value"),
+      detailLabel: document.getElementById("j1-impact-detail-label"),
+      detailValue: document.getElementById("j1-impact-detail-value"),
+    },
+    J2: {
+      card: document.getElementById("impact-card-j2"),
+      status: document.getElementById("j2-impact-status"),
+      step1: document.getElementById("j2-impact-step-1"),
+      step2: document.getElementById("j2-impact-step-2"),
+      metricLabel: document.getElementById("j2-impact-metric-label"),
+      metricValue: document.getElementById("j2-impact-metric-value"),
+      detailLabel: document.getElementById("j2-impact-detail-label"),
+      detailValue: document.getElementById("j2-impact-detail-value"),
     },
   },
 };
@@ -47,11 +76,13 @@ let eventSource = null;
 function openMenu() {
   els.body.classList.add("menu-open");
   els.modePanel.setAttribute("aria-hidden", "false");
+  els.menuToggle.setAttribute("aria-expanded", "true");
 }
 
 function closeMenu() {
   els.body.classList.remove("menu-open");
   els.modePanel.setAttribute("aria-hidden", "true");
+  els.menuToggle.setAttribute("aria-expanded", "false");
 }
 
 async function enterFullscreen() {
@@ -121,15 +152,61 @@ function updateModeSelection(modeKey) {
 
 function updatePlayerCard(playerKey, player) {
   const refs = els.players[playerKey];
-  refs.metricLabel.textContent = player.metricLabel;
+  const impactRefs = els.impactPlayers[playerKey];
+  const isDoubletap = currentState?.modeInfo?.kind === "doubletap";
+  const resultsVisible = ["idle", "round_over", "between_rounds", "match_over"].includes(
+    currentState?.phase || "",
+  );
+  const tapCount = player.tapCount || 0;
+  let impactState = "waiting";
+  let impactOutcome = "";
+
+  if (resultsVisible) {
+    impactState = "result";
+    if (player.status === "Parfait") {
+      impactOutcome = "perfect";
+    } else if (player.status === "Trop court") {
+      impactOutcome = "short";
+    } else if (player.status === "Trop long") {
+      impactOutcome = "long";
+    }
+  } else if (tapCount >= 2) {
+    impactState = "locked";
+  } else if (tapCount === 1) {
+    impactState = "running";
+  }
+
   refs.metricValue.textContent = player.metricValue;
-  refs.detailLabel.textContent = player.detailLabel;
   refs.detailValue.textContent = player.detailValue;
-  refs.status.textContent = player.status;
+  const showInlineStatus = !(
+    player.detailLabel === "Statut" && player.detailValue === player.status
+  );
+  refs.status.textContent = showInlineStatus ? player.status : "";
+  refs.tapProgress.hidden = !isDoubletap;
+  refs.tap1.classList.toggle("active", isDoubletap && tapCount >= 1);
+  refs.tap2.classList.toggle("active", isDoubletap && tapCount >= 2);
   refs.card.classList.toggle("winner", Boolean(player.winner));
+
+  impactRefs.status.textContent = player.status;
+  impactRefs.metricLabel.textContent = player.metricLabel;
+  impactRefs.metricValue.textContent = player.metricValue;
+  impactRefs.detailLabel.textContent = player.detailLabel;
+  impactRefs.detailValue.textContent = player.detailValue;
+  impactRefs.card.dataset.taps = String(tapCount);
+  impactRefs.card.dataset.state = impactState;
+  impactRefs.card.dataset.outcome = impactOutcome;
+  impactRefs.card.classList.toggle("winner", Boolean(player.winner));
+  impactRefs.step1.classList.toggle("done", tapCount >= 1);
+  impactRefs.step2.classList.toggle("done", tapCount >= 2);
+  impactRefs.step1.classList.toggle("current", isDoubletap && !resultsVisible && tapCount === 0);
+  impactRefs.step2.classList.toggle("current", isDoubletap && !resultsVisible && tapCount === 1);
 }
 
 function updateScoreboard(scoreboard) {
+  if (!els.scoreBoard || !els.scoreHeadline || !els.scoreSubline) {
+    return;
+  }
+
   els.scoreHeadline.textContent = scoreboard.headline;
   els.scoreSubline.textContent = scoreboard.subline;
   els.scoreBoard.classList.toggle("masked", !scoreboard.visible);
@@ -164,28 +241,12 @@ function liveDisplayValue() {
   return elapsed.toFixed(3);
 }
 
+function liveTargetFocus() {
+  return currentState?.display?.targetValue || "--";
+}
+
 function liveTargetLine() {
-  if (!currentState) {
-    return "";
-  }
-
-  const { display, timing, phase } = currentState;
-  if (!display.dynamicTimer || phase !== "live" || !timing.roundStartedAt) {
-    return display.targetText;
-  }
-
-  const now = serverNowSeconds();
-  const elapsed = Math.max(0, now - timing.roundStartedAt);
-  const hideAfter = timing.hideAfter;
-
-  if (hideAfter !== null && hideAfter !== undefined && elapsed >= hideAfter) {
-    if (timing.kind === "doubletap") {
-      return "Intervalle memorise";
-    }
-    return "Cible memorisee";
-  }
-
-  return display.targetText;
+  return currentState?.display?.targetText || "";
 }
 
 function animateStage() {
@@ -195,6 +256,7 @@ function animateStage() {
   }
 
   els.displayValue.textContent = liveDisplayValue();
+  els.targetFocus.textContent = liveTargetFocus();
   els.targetLine.textContent = liveTargetLine();
   animationFrame = window.requestAnimationFrame(animateStage);
 }
@@ -208,17 +270,33 @@ function applyState(state) {
 
   els.body.dataset.phase = state.phase;
   els.body.dataset.theme = state.modeInfo.theme || state.modeInfo.key;
+  els.body.dataset.modeKind = state.modeInfo.kind;
   els.heroCopy.textContent = state.modeInfo.hero;
   els.modeChip.textContent = state.modeInfo.name;
   els.phaseChip.textContent = state.phaseLabel;
-  els.targetLine.textContent = state.display.targetText;
+  const isDoubletap = state.modeInfo.kind === "doubletap";
+  els.playersTableBoard.hidden = isDoubletap;
+  els.doubletapBoard.hidden = !isDoubletap;
+  els.targetKicker.textContent = state.display.targetLabel;
+  els.targetFocus.textContent = state.display.targetValue;
+  const targetLine = state.display.targetText?.trim() || "";
+  const showTargetLine = targetLine.length > 0 && state.modeInfo.kind !== "reflex";
+  els.targetLine.textContent = targetLine;
+  els.targetLine.hidden = !showTargetLine;
   els.displayValue.textContent = state.display.value;
   els.displayValue.dataset.style = state.display.style;
-  els.displayHint.textContent = state.display.hint;
-  els.message.textContent = state.message;
-  els.roundNumber.textContent = String(state.round || 0);
+  els.displayPanel.dataset.style = state.display.style;
+  const displayHint = state.display.hint?.trim() || "";
+  const showHint = displayHint.length > 0
+    && state.display.style !== "reveal"
+    && !(state.display.style === "live" && state.modeInfo.kind !== "doubletap");
+
+  els.displayHint.textContent = displayHint;
+  els.displayHint.hidden = !showHint;
   els.advanceButton.textContent = state.controls.advanceLabel;
   els.advanceButton.disabled = !state.controls.canAdvance;
+  els.metricHeading.textContent = state.players.J1.metricLabel;
+  els.detailHeading.textContent = state.players.J1.detailLabel;
 
   updateScoreboard(state.scoreboard);
   updatePlayerCard("J1", state.players.J1);

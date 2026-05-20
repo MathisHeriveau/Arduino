@@ -25,9 +25,9 @@ MODES = {
         "description": "Un chrono visible quelques instants, puis plus rien. Le plus proche de la cible gagne.",
         "hero": "Precision pure, score masque jusqu'a la revelation.",
         "theme": "ember",
-        "target_min": 6,
-        "target_max": 15,
-        "hide_after": 2.4,
+        "target_min": 15,
+        "target_max": 20,
+        "hide_after": 5.0,
         "rounds_to_win": 1,
         "reveal_delay": 1.1,
     },
@@ -49,27 +49,14 @@ MODES = {
         "key": "doubletap",
         "name": "Double Impact",
         "kind": "doubletap",
-        "description": "Chaque joueur doit faire deux appuis. L'intervalle entre ses deux buzz doit coller a la cible.",
-        "hero": "Deux impulsions, un seul bon rythme.",
+        "description": "Chaque joueur appuie une fois pour lancer, une fois pour stopper. Le plus proche de la cible gagne.",
+        "hero": "Deux temps. Un depart. Un stop au bon moment.",
         "theme": "cyan",
         "target_min": 2,
         "target_max": 7,
         "hide_after": 0.8,
         "rounds_to_win": 1,
         "reveal_delay": 1.1,
-    },
-    "royale": {
-        "key": "royale",
-        "name": "Serie Royale",
-        "kind": "precision",
-        "description": "Un best of three de precision. Rien n'est montre avant la fin de chaque manche.",
-        "hero": "Premier a trois points. Ambiance finale assuree.",
-        "theme": "gold",
-        "target_min": 4,
-        "target_max": 11,
-        "hide_after": 1.6,
-        "rounds_to_win": 3,
-        "reveal_delay": 1.0,
     },
     "reflex": {
         "key": "reflex",
@@ -83,18 +70,6 @@ MODES = {
         "rounds_to_win": 1,
         "reveal_delay": 0.9,
     },
-    "rapidfire": {
-        "key": "rapidfire",
-        "name": "Rapid Fire",
-        "kind": "reflex",
-        "description": "Une serie reflexe ultra nerveuse. Premier a trois points.",
-        "hero": "Trois points pour survivre au rythme.",
-        "theme": "storm",
-        "go_delay_min": 1.4,
-        "go_delay_max": 3.0,
-        "rounds_to_win": 3,
-        "reveal_delay": 0.75,
-    },
 }
 
 
@@ -104,6 +79,7 @@ def new_player_state():
         "finished": False,
         "result": None,
         "difference": None,
+        "offset": None,
         "status": "Pret",
     }
 
@@ -116,6 +92,30 @@ def format_seconds(value):
     if value is None:
         return "--"
     return f"{value:.3f} s"
+
+
+def format_signed_seconds(value):
+    if value is None:
+        return "--"
+    return f"{value:+.3f} s"
+
+
+def format_target_value(value):
+    if value is None:
+        return "--"
+
+    rounded = round(value)
+    if abs(value - rounded) < 1e-9:
+        return f"{int(rounded)}s"
+    return f"{value:.3f}s"
+
+
+def classify_interval_offset(offset):
+    if offset is None:
+        return "Pret"
+    if abs(offset) <= 0.08:
+        return "Parfait"
+    return "Trop court" if offset < 0 else "Trop long"
 
 
 class StateStream:
@@ -435,17 +435,9 @@ class GameEngine:
                 self.target = random.randint(mode["target_min"], mode["target_max"])
                 self.phase = "live"
                 if mode["kind"] == "doubletap":
-                    self.message = (
-                        f"Cible {self.target} secondes. Deux buzz par joueur."
-                    )
-                    self._log(
-                        f"Manche {self.round_number}: cible {self.target}s en Double Impact."
-                    )
+                    self.message = "1er appui = depart. 2e appui = stop."
                 else:
                     self.message = f"Cible {self.target} secondes. Top chrono."
-                    self._log(
-                        f"Manche {self.round_number}: cible {self.target}s dans {mode['name']}."
-                    )
                 self.bridge.show_ready()
                 self._emit_state_change_locked()
                 return True, "Manche lancee."
@@ -548,53 +540,49 @@ class GameEngine:
 
         if not player_state["presses"]:
             player_state["presses"].append(now)
-            player_state["status"] = "Premiere impulsion"
-            self.message = "Enregistrez la seconde impulsion."
+            player_state["status"] = "Intervalle lance"
+            self.message = "2e appui pour stopper au bon moment."
             return
 
         interval = now - player_state["presses"][0]
+        offset = interval - self.target
         player_state["presses"].append(now)
         player_state["finished"] = True
         player_state["result"] = round(interval, 3)
-        player_state["difference"] = round(abs(interval - self.target), 3)
-        player_state["status"] = "Double impact verrouille"
+        player_state["difference"] = round(abs(offset), 3)
+        player_state["offset"] = round(offset, 3)
+        player_state["status"] = classify_interval_offset(player_state["offset"])
         finished_count = sum(
             1 for current_player in PLAYERS if self.players[current_player]["finished"]
         )
 
         if finished_count < len(PLAYERS):
-            self.message = f"{finished_count}/2 joueurs verrouilles."
+            self.message = f"{player} verrouille. L'autre joueur termine."
             return
 
         diff1 = self.players["J1"]["difference"]
         diff2 = self.players["J2"]["difference"]
 
         if diff1 < diff2:
-            self.players["J1"]["status"] = "Rythme parfait"
-            self.players["J2"]["status"] = "Trop large"
             self._queue_reveal(
                 now,
                 "J1",
-                f"J1 gagne l'intervalle avec {diff1:.3f}s d'ecart.",
+                f"J1 gagne l'intervalle avec {diff1:.3f}s d'erreur.",
             )
             return
 
         if diff2 < diff1:
-            self.players["J2"]["status"] = "Rythme parfait"
-            self.players["J1"]["status"] = "Trop large"
             self._queue_reveal(
                 now,
                 "J2",
-                f"J2 gagne l'intervalle avec {diff2:.3f}s d'ecart.",
+                f"J2 gagne l'intervalle avec {diff2:.3f}s d'erreur.",
             )
             return
 
-        self.players["J1"]["status"] = "Meme rythme"
-        self.players["J2"]["status"] = "Meme rythme"
         self._queue_reveal(
             now,
             "egalite",
-            f"Egalite parfaite sur l'intervalle a {diff1:.3f}s.",
+            f"Egalite parfaite sur l'intervalle a {diff1:.3f}s d'erreur.",
         )
 
     def _handle_reflex_press(self, player, now):
@@ -722,27 +710,33 @@ class GameEngine:
             )
         elif mode_kind == "doubletap":
             metric_label = "Intervalle"
-            detail_label = "Ecart"
+            detail_label = "Erreur"
             if results_visible and player["result"] is not None:
                 metric_value = format_seconds(player["result"])
-                detail_value = format_seconds(player["difference"])
+                detail_value = format_signed_seconds(player["offset"])
             elif player["finished"]:
-                metric_value = "LOCK"
-                detail_value = "Secret"
+                metric_label = "Enregistre"
+                detail_label = "Etat"
+                metric_value = "OK"
+                detail_value = "Attente"
             elif len(player["presses"]) == 1:
-                metric_value = "1 / 2"
-                detail_value = "Arme"
+                metric_label = "Prochain appui"
+                detail_label = "Etat"
+                metric_value = "Appui 2"
+                detail_value = "En cours"
             else:
-                metric_value = "--"
-                detail_value = "--"
+                metric_label = "Prochain appui"
+                detail_label = "Etat"
+                metric_value = "Appui 1"
+                detail_value = "Pret"
             if results_visible:
                 status = player["status"]
             elif player["finished"]:
-                status = "Verrouille"
+                status = "2e appui recu"
             elif len(player["presses"]) == 1:
-                status = "Premiere impulsion"
+                status = "1er appui recu"
             else:
-                status = "En jeu"
+                status = "En attente"
         else:
             metric_label = "Reaction"
             detail_label = "Statut"
@@ -768,6 +762,7 @@ class GameEngine:
             "detailLabel": detail_label,
             "detailValue": detail_value,
             "status": status,
+            "tapCount": min(len(player["presses"]), 2) if mode_kind == "doubletap" else 0,
             "winner": self.winner == player_key or self.match_winner == player_key,
             "locked": player["finished"],
         }
@@ -780,17 +775,16 @@ class GameEngine:
             "value": "--",
             "hint": mode["hero"],
             "style": "idle",
-            "targetText": "Pret a lancer la scene",
+            "targetText": "",
+            "targetLabel": "Scene",
+            "targetValue": "Pret",
             "dynamicTimer": False,
             "blackout": bool(mode.get("blackout")),
         }
 
         if kind == "precision":
-            payload["targetText"] = (
-                f"Cible {self.target} secondes"
-                if self.target is not None
-                else "Cible en attente"
-            )
+            payload["targetLabel"] = "Valeur cible"
+            payload["targetValue"] = format_target_value(self.target)
             if self.phase == "live" and self.round_started_at is not None:
                 payload["dynamicTimer"] = True
                 payload["hint"] = "Gardez le tempo."
@@ -799,71 +793,75 @@ class GameEngine:
                 payload["value"] = "LOCK"
                 payload["hint"] = "Les deux temps sont captures."
                 payload["style"] = "locked"
-                payload["targetText"] = "Revelation en cours"
             elif self._results_visible() and self.winner == "egalite":
                 payload["value"] = "EGA"
-                payload["hint"] = self.message
+                payload["hint"] = ""
                 payload["style"] = "reveal"
-                payload["targetText"] = (
-                    f"Cible {self.target} secondes"
-                    if self.target is not None
-                    else "Cible revelee"
-                )
             elif self._results_visible() and self.winner in PLAYERS:
                 payload["value"] = self.winner
-                payload["hint"] = self.message
+                payload["hint"] = ""
                 payload["style"] = "reveal"
-                payload["targetText"] = f"Cible {self.target} secondes"
             return payload
 
         if kind == "doubletap":
-            payload["targetText"] = (
-                f"Intervalle cible {self.target} secondes"
-                if self.target is not None
-                else "Intervalle en attente"
-            )
+            payload["targetLabel"] = "Intervalle cible"
+            payload["targetValue"] = format_target_value(self.target)
+            payload["value"] = "APPUI 1"
+            payload["hint"] = "Chaque joueur joue ses deux appuis."
             if self.phase == "live":
-                payload["dynamicTimer"] = True
-                payload["hint"] = "Chaque joueur doit buzzer deux fois."
+                waiting_second_tap = any(
+                    len(self.players[player]["presses"]) == 1
+                    and not self.players[player]["finished"]
+                    for player in PLAYERS
+                )
+                payload["value"] = "APPUI 2" if waiting_second_tap else "APPUI 1"
+                payload["hint"] = (
+                    "Deuxieme appui."
+                    if waiting_second_tap
+                    else "Premier appui."
+                )
                 payload["style"] = "live"
             elif self.phase == "awaiting_reveal":
-                payload["value"] = "LOCK"
-                payload["hint"] = "Les deux intervalles sont captures."
+                payload["value"] = "OK"
+                payload["hint"] = "Intervalles captures."
                 payload["style"] = "locked"
-                payload["targetText"] = "Revelation en cours"
             elif self._results_visible() and self.winner == "egalite":
                 payload["value"] = "EGA"
-                payload["hint"] = self.message
+                payload["hint"] = ""
                 payload["style"] = "reveal"
             elif self._results_visible() and self.winner in PLAYERS:
                 payload["value"] = self.winner
-                payload["hint"] = self.message
+                payload["hint"] = ""
                 payload["style"] = "reveal"
             return payload
 
-        payload["targetText"] = "Attendez le signal"
+        payload["targetLabel"] = "Signal"
+        payload["targetValue"] = "Stand by"
         if self.phase == "arming":
+            payload["targetValue"] = "..."
             payload["value"] = "..."
             payload["hint"] = "Ne touchez a rien."
             payload["style"] = "warning"
         elif self.phase == "live":
+            payload["targetValue"] = "GO"
             payload["value"] = "GO"
             payload["hint"] = "Premier impact gagnant."
             payload["style"] = "go"
-            payload["targetText"] = "Feu vert"
         elif self.phase == "awaiting_reveal":
+            payload["targetValue"] = "LOCK"
             payload["value"] = "LOCK"
             payload["hint"] = "Signal capture."
             payload["style"] = "locked"
-            payload["targetText"] = "Revelation en cours"
-        elif self._results_visible() and self.winner == "egalite":
-            payload["value"] = "EGA"
-            payload["hint"] = self.message
-            payload["style"] = "reveal"
-        elif self._results_visible() and self.winner in PLAYERS:
-            payload["value"] = self.winner
-            payload["hint"] = self.message
-            payload["style"] = "reveal"
+        elif self._results_visible():
+            payload["targetValue"] = "GO"
+            if self.winner == "egalite":
+                payload["value"] = "EGA"
+                payload["hint"] = ""
+                payload["style"] = "reveal"
+            elif self.winner in PLAYERS:
+                payload["value"] = self.winner
+                payload["hint"] = ""
+                payload["style"] = "reveal"
         return payload
 
     def _snapshot_unlocked(self):
@@ -894,12 +892,7 @@ class GameEngine:
 
         controls = {
             "canAdvance": self.phase not in {"arming", "live", "awaiting_reveal"},
-            "advanceLabel": {
-                "idle": "Entrer en scene",
-                "round_over": "Nouvelle manche",
-                "between_rounds": "Manche suivante",
-                "match_over": "Nouvelle serie",
-            }.get(self.phase, "En cours"),
+            "advanceLabel": "Nouvelle partie",
         }
 
         phase_labels = {

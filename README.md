@@ -37,14 +37,8 @@ L'application inclut actuellement:
 - `Double Impact`
   Chaque joueur doit faire 2 appuis. L'intervalle entre les 2 buzz doit coller a la cible.
 
-- `Serie Royale`
-  Best-of-3 sur un mode precision.
-
 - `Reflex Noir`
   Attendre le signal `GO`. Faux depart sanctionne.
-
-- `Rapid Fire`
-  Serie reflexe rapide, premier a 3 points.
 
 ## Materiel et cablage
 

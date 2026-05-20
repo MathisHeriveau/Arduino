@@ -12,78 +12,154 @@
 
   <main class="kiosk">
     <header class="topbar">
-      <div class="brandblock">
-        <div class="brand">Bouton Club</div>
-        <div id="hero-copy" class="hero-copy">Precision pure, score masque jusqu'a la revelation.</div>
-      </div>
-
-      <div class="statusblock">
-        <div id="mode-chip" class="mode-chip">Timer Fantome</div>
-        <div id="phase-chip" class="phase-chip">Pret</div>
-      </div>
+      <div class="brand">Bouton Club</div>
 
       <div class="toolbar">
-        <button id="menu-toggle" class="control-button" type="button">Modes</button>
-        <button id="fullscreen-button" class="control-button" type="button">Plein ecran</button>
-        <button id="reset-button" class="control-button control-button-muted" type="button">Reset</button>
+        <button id="advance-button" class="launch-button header-launch-button" type="button">Nouvelle partie</button>
+        <button
+          id="menu-toggle"
+          class="control-button menu-toggle"
+          type="button"
+          aria-label="Ouvrir le menu"
+          aria-expanded="false"
+          aria-controls="mode-panel"
+        >
+          <span class="sr-only">Menu</span>
+          <span class="burger-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
       </div>
     </header>
 
-    <section class="stage">
-      <div id="target-line" class="target-line">Pret a lancer la scene</div>
-      <div id="display-value" class="display-value">--</div>
-      <div id="display-hint" class="display-hint">Choisissez un mode puis lancez la scene.</div>
-      <div id="message" class="message-strip">Choisissez un mode puis lancez la scene.</div>
+    <section class="arena">
+      <section class="stage">
+        <div class="target-card">
+          <div id="target-kicker" class="target-kicker">Valeur cible</div>
+          <div id="target-focus" class="target-focus">--</div>
+          <div id="target-line" class="target-line">Pret a lancer la scene</div>
+        </div>
+
+        <div class="display-panel">
+          <div class="display-kicker">Etape</div>
+          <div id="display-value" class="display-value">--</div>
+          <div id="display-hint" class="display-hint">Choisissez un mode puis lancez la scene.</div>
+        </div>
+      </section>
+
+      <section id="players-table-board" class="players-board players-table-board" aria-label="Etat des joueurs">
+        <div class="players-table-shell">
+          <table class="players-table">
+            <thead>
+              <tr>
+                <th>Joueur</th>
+                <th>ID</th>
+                <th id="metric-heading">Chrono</th>
+                <th id="detail-heading">Ecart</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="player-j1" class="player-row player-row-j1">
+                <td class="player-name-cell">
+                  <span class="player-name">Joueur 1</span>
+                  <span id="j1-status" class="player-status-text">Pret</span>
+                  <div id="j1-tap-progress" class="tap-progress" hidden>
+                    <span id="j1-tap-1" class="tap-pill">1er appui</span>
+                    <span id="j1-tap-2" class="tap-pill">2e appui</span>
+                  </div>
+                </td>
+                <td class="player-code-cell"><strong>J1</strong></td>
+                <td id="j1-metric-value">--</td>
+                <td id="j1-detail-value">--</td>
+              </tr>
+              <tr id="player-j2" class="player-row player-row-j2">
+                <td class="player-name-cell">
+                  <span class="player-name">Joueur 2</span>
+                  <span id="j2-status" class="player-status-text">Pret</span>
+                  <div id="j2-tap-progress" class="tap-progress" hidden>
+                    <span id="j2-tap-1" class="tap-pill">1er appui</span>
+                    <span id="j2-tap-2" class="tap-pill">2e appui</span>
+                  </div>
+                </td>
+                <td class="player-code-cell"><strong>J2</strong></td>
+                <td id="j2-metric-value">--</td>
+                <td id="j2-detail-value">--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="doubletap-board" class="doubletap-board" aria-label="Double Impact" hidden>
+        <article id="impact-card-j1" class="impact-card impact-card-j1">
+          <div class="impact-card-head">
+            <div>
+              <div class="impact-player-name">Joueur 1</div>
+              <div id="j1-impact-status" class="impact-player-status">En attente</div>
+            </div>
+            <strong class="impact-player-code">J1</strong>
+          </div>
+
+          <div class="impact-track">
+            <div id="j1-impact-step-1" class="impact-step">
+              <span class="impact-step-index">1</span>
+              <span class="impact-step-label"></span>
+            </div>
+            <div class="impact-track-line"></div>
+            <div id="j1-impact-step-2" class="impact-step">
+              <span class="impact-step-index">2</span>
+              <span class="impact-step-label"></span>
+            </div>
+          </div>
+
+          <div class="impact-readouts">
+            <div class="impact-readout">
+              <span id="j1-impact-metric-label" class="impact-readout-label">Prochain appui</span>
+              <strong id="j1-impact-metric-value" class="impact-readout-value">Appui 1</strong>
+            </div>
+            <div class="impact-readout">
+              <span id="j1-impact-detail-label" class="impact-readout-label">Etat</span>
+              <strong id="j1-impact-detail-value" class="impact-readout-value">Pret</strong>
+            </div>
+          </div>
+        </article>
+
+        <article id="impact-card-j2" class="impact-card impact-card-j2">
+          <div class="impact-card-head">
+            <div>
+              <div class="impact-player-name">Joueur 2</div>
+              <div id="j2-impact-status" class="impact-player-status">En attente</div>
+            </div>
+            <strong class="impact-player-code">J2</strong>
+          </div>
+
+          <div class="impact-track">
+            <div id="j2-impact-step-1" class="impact-step">
+              <span class="impact-step-index">1</span>
+              <span class="impact-step-label"></span>
+            </div>
+            <div class="impact-track-line"></div>
+            <div id="j2-impact-step-2" class="impact-step">
+              <span class="impact-step-index">2</span>
+              <span class="impact-step-label"></span>
+            </div>
+          </div>
+
+          <div class="impact-readouts">
+            <div class="impact-readout">
+              <span id="j2-impact-metric-label" class="impact-readout-label">Prochain appui</span>
+              <strong id="j2-impact-metric-value" class="impact-readout-value">Appui 1</strong>
+            </div>
+            <div class="impact-readout">
+              <span id="j2-impact-detail-label" class="impact-readout-label">Etat</span>
+              <strong id="j2-impact-detail-value" class="impact-readout-value">Pret</strong>
+            </div>
+          </div>
+        </article>
+      </section>
     </section>
-
-    <section class="lanes">
-      <article id="player-j1" class="lane lane-j1">
-        <div class="lane-head">
-          <span class="lane-tag">Joueur 1</span>
-          <strong>J1</strong>
-        </div>
-        <div class="lane-metric">
-          <span id="j1-metric-label">Chrono</span>
-          <strong id="j1-metric-value">--</strong>
-        </div>
-        <div class="lane-metric">
-          <span id="j1-detail-label">Ecart</span>
-          <strong id="j1-detail-value">--</strong>
-        </div>
-        <div id="j1-status" class="lane-status">Pret</div>
-      </article>
-
-      <article id="player-j2" class="lane lane-j2">
-        <div class="lane-head">
-          <span class="lane-tag">Joueur 2</span>
-          <strong>J2</strong>
-        </div>
-        <div class="lane-metric">
-          <span id="j2-metric-label">Chrono</span>
-          <strong id="j2-metric-value">--</strong>
-        </div>
-        <div class="lane-metric">
-          <span id="j2-detail-label">Ecart</span>
-          <strong id="j2-detail-value">--</strong>
-        </div>
-        <div id="j2-status" class="lane-status">Pret</div>
-      </article>
-    </section>
-
-    <footer class="dock">
-      <div id="scoreboard" class="scoreboard">
-        <div id="score-headline" class="score-headline">J1 0 | J2 0</div>
-        <div id="score-subline" class="score-subline">Manche seche</div>
-      </div>
-
-      <div class="dock-actions">
-        <div class="round-pill">
-          Manche
-          <span id="round-number">0</span>
-        </div>
-        <button id="advance-button" class="launch-button" type="button">Entrer en scene</button>
-      </div>
-    </footer>
 
     <aside id="mode-panel" class="mode-panel" aria-hidden="true">
       <div class="mode-panel-head">
@@ -92,6 +168,17 @@
           <h2>Choix du jeu</h2>
         </div>
         <button id="close-menu" class="control-button control-button-muted" type="button">Fermer</button>
+      </div>
+      <div class="panel-summary">
+        <div class="panel-status">
+          <div id="mode-chip" class="mode-chip">Timer Fantome</div>
+          <div id="phase-chip" class="phase-chip">Pret</div>
+        </div>
+        <div id="hero-copy" class="hero-copy panel-hero">Precision pure, score masque jusqu'a la revelation.</div>
+      </div>
+      <div class="panel-actions">
+        <button id="fullscreen-button" class="control-button" type="button">Plein ecran</button>
+        <button id="reset-button" class="control-button control-button-muted" type="button">Reset</button>
       </div>
       <div id="mode-grid" class="mode-grid"></div>
     </aside>
